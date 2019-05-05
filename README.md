@@ -1,0 +1,2 @@
+# jopla
+simple joplin viewer
