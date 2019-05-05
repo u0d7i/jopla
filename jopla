@@ -1,7 +1,22 @@
 #!/bin/bash
 
-DB=~/.config/joplin/database.sqlite
+#DB=~/.config/joplin/database.sqlite
+DB=/tmp/database.sqlite
 
 SQLC="sqlite3"
 
-ls -l ${DB}
+err(){
+        echo "- err: $@" >&2
+        exit 1
+}
+
+list_folders(){
+        SQL="select title from folders"
+        ${SQLC} ${DB} "${SQL}"
+}
+
+if [ ! -f ${DB} ]; then
+        err "no db found"
+fi
+
+list_folders
