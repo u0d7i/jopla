@@ -41,13 +41,11 @@ list_folders(){
     if [[ "$GUI" -eq 0 ]]; then
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
+        # take care of whitespaces in names, use arrays
         MNU=()
         while read line; do
-            id=$(echo $line | awk -F\| '{print $1}')
-            name=$(echo $line | awk -F\| '{print $2}')
-            # use array for values containing spaces
-            MNU+=("$id")
-            MNU+=("$name")
+            IFS='|' read -a line_array <<< "${line}"
+            MNU+=(${line_array[@]})
         done < <(${SQLC} ${DB} "${SQL}")
         # a bit of redirect black magic here to workaround pipe subshells
 
