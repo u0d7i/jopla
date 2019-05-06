@@ -17,6 +17,7 @@ usage(){
     echo "    -h | -?     this help"
     echo "    -d <dbfile> db file"
     echo "    -f          list folders"
+    echo "    -F <f-id>   list notes under folder id"
     exit
 }
 
@@ -56,8 +57,15 @@ list_folders(){
         FLD=$(${DIA} --clear --notags --title "Jopla" --menu "Folders" ${H} ${W} ${MH}\
             ${MNU[@]} \
             3>&1 1>&2 2>&3)
-        echo "${FLD}"
+        list_notes  "${FLD}"
     fi
+}
+
+list_notes(){
+    # parent ID is folder
+    PID=$1
+    SQL="select id,title from notes where parent_id='$PID'"
+    ${SQLC} -separator " " ${DB} "${SQL}"
 }
 
 # mandatory checks
@@ -66,7 +74,7 @@ for gear in $SQLC $DIA; do
 done
 
 # getopts
-while getopts ":d:fh" opt; do
+while getopts ":d:fF:h" opt; do
     case $opt in
         h)
             usage
@@ -77,6 +85,10 @@ while getopts ":d:fh" opt; do
         f)
             GUI=0
             ACTION="list_folders"
+            ;;
+        F)
+            GUI=0
+            ACTION="list_notes $OPTARG"
             ;;
         \?)
             usage
