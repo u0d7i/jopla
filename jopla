@@ -1,13 +1,20 @@
 #!/bin/bash
 
 SELF=$(basename $0)
-#DB=~/.config/joplin/database.sqlite
-DB=/tmp/database.sqlite
+DB=~/.config/joplin/database.sqlite
 
 SQLC="sqlite3"
 
+GUI=1
+ACTION="list_folders"
+
 usage(){
     echo "$SELF - joplin db viewer"
+    echo "usage: ${SELF} [options]"
+    echo "    -h | -?     this help"
+    echo "    -d <dbfile> db file"
+    echo "    -f          list folders"
+    exit
 }
 
 err(){
@@ -15,13 +22,68 @@ err(){
     exit 1
 }
 
-list_folders(){
-    SQL="select title from folders"
-    ${SQLC} ${DB} "${SQL}"
+calc_size(){
+    if [ -z $(command -v resize) ]; then
+        # resize is not available, do it manually
+        COLUMNS=$(tput cols)
+        LINES=$(tput lines)
+        export COLUMNS LINES;
+    else
+        eval `resize`
+    fi
+    W=$(( $COLUMNS - 4 ))
+    H=$(( $LINES - 4 ))
+    MH=$(( $H - 8 ))
 }
 
+list_folders(){
+    SQL="select id,title from folders"
+    if [[ "$GUI" -eq 0 ]]; then
+        ${SQLC} -separator " " ${DB} "${SQL}"
+    else
+        MNU=()
+        while read line; do
+            id=$(echo $line | awk -F\| '{print $1}')
+            name=$(echo $line | awk -F\| '{print $2}')
+            # use array for values containing spaces
+            MNU+=("$id")
+            MNU+=("$name")
+        done < <(${SQLC} ${DB} "${SQL}")
+        # a bit of redirect black magic here to workaround pipe subshells
+
+        calc_size
+        FLD=$(whiptail --clear --notags --title "Jopla" --menu "Folders" ${H} ${W} ${MH}\
+            ${MNU[@]} \
+            3>&1 1>&2 2>&3)
+        echo "${FLD}"
+    fi
+}
+
+# mandatory checks
+command -v "$SQLC" >/dev/null 2>&1 || err "$SQLC not found, aborting"
+
+# getopts
+while getopts ":d:fh" opt; do
+    case $opt in
+        h)
+            usage
+            ;;
+        d)
+            DB="$OPTARG"
+            ;;
+        f)
+            GUI=0
+            ACTION="list_folders"
+            ;;
+        \?)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
 if [ ! -f ${DB} ]; then
-    err "no db found"
+    err "${DB} not found"
 fi
 
-list_folders
+$ACTION
