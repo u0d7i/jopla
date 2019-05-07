@@ -40,24 +40,30 @@ calc_size(){
     MH=$(( $H - 8 ))
 }
 
+gui_mnu(){
+    # req: $SQL, $MTITLE, $BACK
+    MNU=()
+    while read line; do
+        IFS='|' read -a line_array <<< "${line}"
+        MNU+=(${line_array[@]})
+    done < <(${SQLC} ${DB} "${SQL}")
+    # a bit of redirect black magic here to workaround pipe subshells
+
+    calc_size
+    RET=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
+        $BACK \
+        ${MNU[@]} \
+        3>&1 1>&2 2>&3)
+    echo "${RET}"
+}
+
 list_folders(){
     SQL="select id,title from folders"
     if [[ "$GUI" -eq 0 ]]; then
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
-        # take care of whitespaces in names, use arrays
-        MNU=()
-        while read line; do
-            IFS='|' read -a line_array <<< "${line}"
-            MNU+=(${line_array[@]})
-        done < <(${SQLC} ${DB} "${SQL}")
-        # a bit of redirect black magic here to workaround pipe subshells
-
-        calc_size
-        FLD=$(${DIA} --clear --notags --title "Jopla" --menu "Folders" ${H} ${W} ${MH}\
-            ${MNU[@]} \
-            3>&1 1>&2 2>&3)
-        list_notes  "${FLD}"
+        MTITLE="Folders:"
+        list_notes $(gui_mnu)
     fi
 }
 
@@ -65,7 +71,17 @@ list_notes(){
     # parent ID is folder
     PID=$1
     SQL="select id,title from notes where parent_id='$PID'"
-    ${SQLC} -separator " " ${DB} "${SQL}"
+    if [[ "$GUI" -eq 0 ]]; then
+        ${SQLC} -separator " " ${DB} "${SQL}"
+    else
+        MTITLE="Notes:"
+        show_note $(gui_mnu)
+    fi
+}
+
+show_note(){
+    # placeholder
+    echo "showing note for $1"
 }
 
 # mandatory checks
