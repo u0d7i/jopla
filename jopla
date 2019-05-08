@@ -54,7 +54,8 @@ gui_mnu(){
         $BACK \
         "${MNU[@]}" \
         3>&1 1>&2 2>&3)
-    echo "${RET}"
+    # echo "${RET}"
+    # use variable set, not string
 }
 
 list_folders(){
@@ -63,7 +64,8 @@ list_folders(){
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
         MTITLE="Folders:"
-        list_notes $(gui_mnu)
+        gui_mnu
+        list_notes "${RET}"
     fi
 }
 
@@ -75,7 +77,8 @@ list_notes(){
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
         MTITLE="Notes:"
-        show_note $(gui_mnu)
+        gui_mnu
+        show_note "${RET}"
     fi
 }
 
