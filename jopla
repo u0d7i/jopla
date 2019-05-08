@@ -50,12 +50,11 @@ gui_mnu(){
     # a bit of redirect black magic here to workaround pipe subshells
 
     calc_size
-    RET=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
+    OUT=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
         $BACK \
         "${MNU[@]}" \
         3>&1 1>&2 2>&3)
-    # echo "${RET}"
-    # use variable set, not string
+    RET=$?
 }
 
 list_folders(){
@@ -65,20 +64,21 @@ list_folders(){
     else
         MTITLE="Folders:"
         gui_mnu
-        list_notes "${RET}"
+        list_notes "${OUT}"
     fi
 }
 
 list_notes(){
     # parent ID is folder
     PID=$1
+    BACK="BACK <---Folders"
     SQL="select id,title from notes where parent_id='$PID'"
     if [[ "$GUI" -eq 0 ]]; then
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
         MTITLE="Notes:"
         gui_mnu
-        show_note "${RET}"
+        show_note "${OUT}"
     fi
 }
 
