@@ -10,6 +10,7 @@ DIA="whiptail"
 DB=~/.config/joplin/database.sqlite
 GUI=1
 ACTION="list_folders"
+SORT="title" # options: "title", "updated_time", "NULL"
 
 usage(){
     echo "$SELF - joplin db viewer"
@@ -18,6 +19,7 @@ usage(){
     echo "    -d <dbfile> db file"
     echo "    -f          list folders"
     echo "    -F <f-id>   list notes under folder id"
+    echo "    -s <field>  sort by: title,updated_time,NULL"
     exit
 }
 
@@ -58,7 +60,7 @@ gui_mnu(){
 }
 
 list_folders(){
-    SQL="select id,title from folders"
+    SQL="select id,title from folders ORDER BY ${SORT}"
     if [[ "$GUI" -eq 0 ]]; then
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
@@ -72,7 +74,7 @@ list_notes(){
     # parent ID is folder
     PID=$1
     BACK="BACK <---Folders"
-    SQL="select id,title from notes where parent_id='$PID'"
+    SQL="select id,title from notes where parent_id='$PID' ORDER BY ${SORT}"
     if [[ "$GUI" -eq 0 ]]; then
         ${SQLC} -separator " " ${DB} "${SQL}"
     else
@@ -93,7 +95,7 @@ for gear in $SQLC $DIA; do
 done
 
 # getopts
-while getopts ":d:fF:h" opt; do
+while getopts ":d:fF:hs:" opt; do
     case $opt in
         h)
             usage
@@ -108,6 +110,9 @@ while getopts ":d:fF:h" opt; do
         F)
             GUI=0
             ACTION="list_notes $OPTARG"
+            ;;
+        s)
+            SORT="$OPTARG"
             ;;
         \?)
             usage
