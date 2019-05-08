@@ -45,14 +45,14 @@ gui_mnu(){
     MNU=()
     while read line; do
         IFS='|' read -a line_array <<< "${line}"
-        MNU+=(${line_array[@]})
+        MNU+=("${line_array[@]}")
     done < <(${SQLC} ${DB} "${SQL}")
     # a bit of redirect black magic here to workaround pipe subshells
 
     calc_size
     RET=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
         $BACK \
-        ${MNU[@]} \
+        "${MNU[@]}" \
         3>&1 1>&2 2>&3)
     echo "${RET}"
 }
