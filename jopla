@@ -139,6 +139,7 @@ if [ ! -f ${DB} ]; then
     err "${DB} not found"
 fi
 
+# FIXME: add notes.sortOrder.reverse check
 SORT=$(do_sql "select value from settings where key='notes.sortOrder.field'")
 
 $ACTION
