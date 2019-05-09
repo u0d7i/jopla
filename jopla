@@ -4,13 +4,14 @@ SELF=$(basename $0)
 
 # tools
 SQLC="sqlite3"
+SQLO=""
 DIA="whiptail"
 
 # defaults
 DB=~/.config/joplin/database.sqlite
 GUI=1
 ACTION="list_folders"
-SORT="title" # options: "title", "updated_time", "NULL"
+SORT="NULL" # options: "title", "updated_time", "NULL"
 
 usage(){
     echo "$SELF - joplin db viewer"
@@ -26,6 +27,20 @@ usage(){
 err(){
     echo "- err: $@" >&2
     exit 1
+}
+
+no_gui(){
+    GUI=0
+    SQLO="-separator ' '"
+}
+
+do_sql(){
+    # make it work both with global variable and arg
+    if [[ "$#" -eq 0 ]]; then
+        ${SQLC} ${SQLO} ${DB} "${SQL}"
+    else
+        ${SQLC} ${SQLO} ${DB} "$@"
+    fi
 }
 
 gui_calc_size(){
@@ -48,8 +63,7 @@ gui_mnu(){
     while read line; do
         IFS='|' read -a line_array <<< "${line}"
         MNU+=("${line_array[@]}")
-    done < <(${SQLC} ${DB} "${SQL}")
-    # a bit of redirect black magic here to workaround pipe subshells
+    done <<< $(do_sql)
 
     gui_calc_size
     OUT=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
@@ -62,7 +76,7 @@ gui_mnu(){
 list_folders(){
     SQL="select id,title from folders ORDER BY ${SORT}"
     if [[ "$GUI" -eq 0 ]]; then
-        ${SQLC} -separator " " ${DB} "${SQL}"
+        do_sql
     else
         MTITLE="Folders:"
         gui_mnu
@@ -76,7 +90,7 @@ list_notes(){
     BACK="BACK <---Folders"
     SQL="select id,title from notes where parent_id='$PID' ORDER BY ${SORT}"
     if [[ "$GUI" -eq 0 ]]; then
-        ${SQLC} -separator " " ${DB} "${SQL}"
+        do_sql
     else
         MTITLE="Notes:"
         gui_mnu
@@ -104,11 +118,11 @@ while getopts ":d:fF:hs:" opt; do
             DB="$OPTARG"
             ;;
         f)
-            GUI=0
+            no_gui
             ACTION="list_folders"
             ;;
         F)
-            GUI=0
+            no_gui
             ACTION="list_notes $OPTARG"
             ;;
         s)
@@ -124,5 +138,7 @@ shift $((OPTIND-1))
 if [ ! -f ${DB} ]; then
     err "${DB} not found"
 fi
+
+SORT=$(do_sql "select value from settings where key='notes.sortOrder.field'")
 
 $ACTION
