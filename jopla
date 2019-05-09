@@ -28,7 +28,7 @@ err(){
     exit 1
 }
 
-calc_size(){
+gui_calc_size(){
     if [ -z $(command -v resize) ]; then
         # resize is not available, do it manually
         COLUMNS=$(tput cols)
@@ -51,7 +51,7 @@ gui_mnu(){
     done < <(${SQLC} ${DB} "${SQL}")
     # a bit of redirect black magic here to workaround pipe subshells
 
-    calc_size
+    gui_calc_size
     OUT=$(${DIA} --clear --notags --title "Jopla" --menu "${MTITLE}" ${H} ${W} ${MH}\
         $BACK \
         "${MNU[@]}" \
