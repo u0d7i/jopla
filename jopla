@@ -73,6 +73,15 @@ gui_mnu(){
     RET=$?
 }
 
+gui_msg(){
+    # req: $SQL, $MTITLE
+    MSG=$(do_sql)
+    gui_calc_size
+    # FIXME: scroll only if not fit
+    OUT=$(${DIA} --scrolltext --clear --msgbox --title "${MTITLE}" "${MSG}" ${H} ${W} 3>&1 1>&2 2>&3)
+    RET=$?
+}
+
 list_folders(){
     SQL="select id,title from folders ORDER BY ${SORT}"
     if [[ "$GUI" -eq 0 ]]; then
@@ -100,7 +109,10 @@ list_notes(){
 
 show_note(){
     # placeholder
-    echo "showing note for $1"
+    NID=$1
+    MTITLE=$(do_sql "select title from notes where id='$NID'")
+    SQL="select body from notes where id='$NID'"
+    gui_msg
 }
 
 # mandatory checks
